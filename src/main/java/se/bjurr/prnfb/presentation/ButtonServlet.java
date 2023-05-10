@@ -13,14 +13,18 @@ import static se.bjurr.prnfb.transformer.ButtonTransformer.toPrnfbButton;
 import static se.bjurr.prnfb.transformer.ButtonTransformer.toTriggerResultDto;
 
 import com.atlassian.annotations.security.XsrfProtectionExcluded;
+import com.atlassian.bitbucket.project.Project;
+import com.atlassian.bitbucket.repository.Repository;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -28,6 +32,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import se.bjurr.prnfb.http.NotificationResponse;
 import se.bjurr.prnfb.presentation.dto.ButtonDTO;
 import se.bjurr.prnfb.presentation.dto.ButtonFormElementDTO;
@@ -103,34 +108,113 @@ public class ButtonServlet {
     return ok(dtos, APPLICATION_JSON).build();
   }
 
+  public static Long parseLong(String s, long defaultVal) {
+    s = s != null ? s.trim() : "";
+    if ("".equals(s)) {
+      return defaultVal;
+    }
+    try {
+      return Long.parseLong(s);
+    } catch (RuntimeException e) {
+      return defaultVal;
+    }
+  }
+
+  private static String[] parsePath(String path, String finalLabel) {
+    String[] components = path.split("/+");
+    String prevString = null;
+    String project = null;
+    String repo = null;
+    String last = null;
+    for (String s : components) {
+      s = s != null ? s.trim() : "";
+      if ("users".equals(prevString)) {
+        if (project == null) {
+          project = "~" + s.toUpperCase(Locale.ENGLISH);
+        }
+      } else if ("projects".equalsIgnoreCase(prevString)) {
+        if (project == null) {
+          project = s;
+        }
+      } else if ("repos".equalsIgnoreCase(prevString)) {
+        if (repo == null) {
+          repo = s;
+        }
+      } else if (finalLabel != null && finalLabel.equalsIgnoreCase(prevString)) {
+        if (last == null) {
+          last = s;
+        }
+      }
+      prevString = s;
+    }
+    return new String[] {project, repo, last};
+  }
+
   @GET
-  @Path("/projectKey/{projectKey}")
+  @Path("/{s:.*}")
   @Produces(APPLICATION_JSON)
-  public Response get(@PathParam("projectKey") String projectKey) {
-    final List<PrnfbButton> buttons = settingsService.getButtons(projectKey);
+  public Response getAllPaths(@Context UriInfo ui) {
+    final String path = ui.getPath();
+    String[] parsed = parsePath(path, "pull-requests");
+    String project = parsed[0];
+    String repo = parsed[1];
+    String pr = parsed[2];
+    String uuid = null;
+    if (project == null && repo == null && pr == null) {
+      parsed = parsePath(path, "buttons");
+      if (parsed[2] != null
+          && parsed[2].trim().length() == "53076b81-aeec-4159-a81f-8d2ad2ecb4be".length()) {
+        uuid = parsed[2];
+      }
+    }
+
+    if (uuid != null) {
+      UUID u = UUID.fromString(uuid);
+      return getUuidButtons(u);
+    }
+
+    Project p;
+    Repository r = null;
+    if (project != null) {
+      if (repo != null) {
+        r = userCheckService.getRepo(project, repo);
+        if (r != null && pr == null) {
+          // If pr==null then we just want the repoButtons
+          return getRepoButtons(r);
+        }
+      } else {
+        // If r==null, then we just want the projectButtons
+        p = userCheckService.getProject(project);
+        return getProjectButtons(p);
+      }
+    }
+
+    // Nothing is null - we want the pullRequestButtons
+    Integer rId = r != null ? r.getId() : null;
+    Long prId = parseLong(pr, -1L);
+    return getPullRequestButtons(rId, prId);
+  }
+
+  // @Path("/projectKey/{projectKey}")
+  public Response getProjectButtons(Project p) {
+    final List<PrnfbButton> buttons = settingsService.getButtons(p);
     final Iterable<PrnfbButton> allowedButtons = userCheckService.filterAdminAllowed(buttons);
     final List<ButtonDTO> dtos = toButtonDtoList(allowedButtons);
     Collections.sort(dtos);
     return ok(dtos, APPLICATION_JSON).build();
   }
 
-  @GET
-  @Path("/projectKey/{projectKey}/repositorySlug/{repositorySlug}")
-  @Produces(APPLICATION_JSON)
-  public Response get(
-      @PathParam("projectKey") String projectKey,
-      @PathParam("repositorySlug") String repositorySlug) {
-    final List<PrnfbButton> buttons = settingsService.getButtons(projectKey, repositorySlug);
+  // @Path("/projectKey/{projectKey}/repositorySlug/{repositorySlug}")
+  public Response getRepoButtons(Repository r) {
+    final List<PrnfbButton> buttons = settingsService.getButtons(r);
     final Iterable<PrnfbButton> allowedButtons = userCheckService.filterAdminAllowed(buttons);
     final List<ButtonDTO> dtos = toButtonDtoList(allowedButtons);
     Collections.sort(dtos);
     return ok(dtos, APPLICATION_JSON).build();
   }
 
-  @GET
-  @Path("{uuid}")
-  @Produces(APPLICATION_JSON)
-  public Response get(@PathParam("uuid") UUID uuid) {
+  // @Path("{uuid}")
+  public Response getUuidButtons(UUID uuid) {
     final PrnfbButton button = settingsService.getButton(uuid);
     final USER_LEVEL adminRestriction =
         settingsService.getPrnfbSettingsData().getAdminRestriction();
@@ -141,12 +225,8 @@ public class ButtonServlet {
     return ok(dto, APPLICATION_JSON).build();
   }
 
-  @GET
-  @Path("/repository/{repositoryId}/pullrequest/{pullRequestId}")
-  @Produces(APPLICATION_JSON)
-  public Response get(
-      @PathParam("repositoryId") Integer repositoryId,
-      @PathParam("pullRequestId") Long pullRequestId) {
+  // @Path("/repository/{repositoryId}/pullrequest/{pullRequestId}")
+  public Response getPullRequestButtons(Integer repositoryId, Long pullRequestId) {
     final List<PrnfbButton> buttons = buttonsService.getButtons(repositoryId, pullRequestId);
     final List<ButtonDTO> dtos = toButtonDtoList(buttons);
     Collections.sort(dtos);
@@ -157,24 +237,31 @@ public class ButtonServlet {
   }
 
   @POST
-  @Path("{uuid}/press/repository/{repositoryId}/pullrequest/{pullRequestId}")
+  @Path("/fromUUID/{s:.*}")
   @XsrfProtectionExcluded
   @Produces(APPLICATION_JSON)
   public Response press(
-      @Context HttpServletRequest request,
-      @PathParam("repositoryId") Integer repositoryId,
-      @PathParam("pullRequestId") Long pullRequestId,
-      @PathParam("uuid") final UUID buttionUuid) {
-    final List<PrnfbButton> buttons = buttonsService.getButtons(repositoryId, pullRequestId);
-    final Optional<PrnfbButton> button =
-        Iterables.tryFind(buttons, (b) -> b.getUuid().equals(buttionUuid));
+      @Context HttpServletRequest request, @Context UriInfo ui, @FormParam("form") String form) {
+
+    final String path = ui.getPath();
+    String[] parsed = parsePath(path, "pull-requests");
+    String project = parsed[0];
+    String repo = parsed[1];
+    String pr = parsed[2];
+
+    String[] parsed2 = parsed = parsePath(path, "uuid");
+    String uuid = parsed2[2];
+    final UUID u = uuid != null ? UUID.fromString(uuid) : null;
+
+    Repository r = userCheckService.getRepo(project, repo);
+    Integer rId = r != null ? r.getId() : null;
+    Long prId = parseLong(pr, -1L);
+    final List<PrnfbButton> buttons = buttonsService.getButtons(rId, prId);
+    final Optional<PrnfbButton> button = Iterables.tryFind(buttons, (b) -> b.getUuid().equals(u));
     if (!button.isPresent()) {
       return status(NOT_FOUND).build();
     }
-    final String formData = request.getParameter("form");
-    final List<NotificationResponse> results =
-        buttonsService.handlePressed(repositoryId, pullRequestId, buttionUuid, formData);
-
+    final List<NotificationResponse> results = buttonsService.handlePressed(rId, prId, u, form);
     final ButtonPressDTO dto = toTriggerResultDto(button.get(), results);
     return ok(dto, APPLICATION_JSON).build();
   }

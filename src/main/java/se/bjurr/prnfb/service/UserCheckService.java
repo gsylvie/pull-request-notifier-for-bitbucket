@@ -67,7 +67,7 @@ public class UserCheckService {
   }
 
   @VisibleForTesting
-  private Project getProject(String projectKey) {
+  public Project getProject(String projectKey) {
     try {
       return securityService //
           .withPermission(SYS_ADMIN, "Getting project") //
@@ -85,7 +85,7 @@ public class UserCheckService {
   }
 
   @VisibleForTesting
-  Repository getRepo(String projectKey, String repositorySlug) {
+  public Repository getRepo(String projectKey, String repositorySlug) {
     try {
       return securityService //
           .withPermission(SYS_ADMIN, "Getting repo") //

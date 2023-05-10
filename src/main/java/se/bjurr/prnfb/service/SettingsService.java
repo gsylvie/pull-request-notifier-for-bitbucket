@@ -13,6 +13,8 @@ import static se.bjurr.prnfb.settings.PrnfbSettings.UNCHANGED;
 import static se.bjurr.prnfb.settings.PrnfbSettingsBuilder.prnfbSettingsBuilder;
 import static se.bjurr.prnfb.settings.PrnfbSettingsDataBuilder.prnfbSettingsDataBuilder;
 
+import com.atlassian.bitbucket.project.Project;
+import com.atlassian.bitbucket.repository.Repository;
 import com.atlassian.bitbucket.user.SecurityService;
 import com.atlassian.bitbucket.util.Operation;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
@@ -121,7 +123,8 @@ public class SettingsService {
     return getPrnfbSettings().getButtons();
   }
 
-  public List<PrnfbButton> getButtons(String projectKey) {
+  public List<PrnfbButton> getButtons(Project p) {
+    String projectKey = p.getKey();
     final List<PrnfbButton> found = newArrayList();
     for (final PrnfbButton candidate : getPrnfbSettings().getButtons()) {
       if (candidate.getProjectKey().isPresent()
@@ -132,7 +135,10 @@ public class SettingsService {
     return found;
   }
 
-  public List<PrnfbButton> getButtons(String projectKey, String repositorySlug) {
+  public List<PrnfbButton> getButtons(Repository r) {
+    String projectKey = r.getProject().getKey();
+    String repositorySlug = r.getSlug();
+
     final List<PrnfbButton> found = newArrayList();
     for (final PrnfbButton candidate : getPrnfbSettings().getButtons()) {
       if (candidate.getProjectKey().isPresent()

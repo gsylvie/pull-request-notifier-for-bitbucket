@@ -88,7 +88,7 @@ public class NotificationServlet {
   }
 
   @GET
-  @Path("/projectKey/{projectKey}")
+  @Path("/projects/{projectKey}")
   @Produces(APPLICATION_JSON)
   public Response get(@PathParam("projectKey") String projectKey) {
     final List<PrnfbNotification> notifications = this.settingsService.getNotifications(projectKey);
@@ -100,7 +100,7 @@ public class NotificationServlet {
   }
 
   @GET
-  @Path("/projectKey/{projectKey}/repositorySlug/{repositorySlug}")
+  @Path("/projects/{projectKey}/repos/{repositorySlug}")
   @Produces(APPLICATION_JSON)
   public Response get(
       @PathParam("projectKey") String projectKey,

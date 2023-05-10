@@ -1,15 +1,16 @@
 define('plugin/prnfb/admin', [
  'jquery',
  '@atlassian/aui',
+ 'bitbucket/util/navbuilder',
  'plugin/prnfb/utils'
-], function($, AJS, utils) {
- var settingsAdminUrlPostUrl = AJS.contextPath() + "/rest/prnfb-admin/1.0/settings";
+], function($, AJS, NAV, utils) {
+ var settingsAdminUrlPostUrl = NAV.rest().build() + "/../../prnfb-admin/1.0/settings";
  var settingsAdminUrl = settingsAdminUrlPostUrl;
 
- var notificationsAdminUrlPostUrl = AJS.contextPath() + "/rest/prnfb-admin/1.0/settings/notifications";
+ var notificationsAdminUrlPostUrl = NAV.rest().build() + "/../../prnfb-admin/1.0/settings/notifications";
  var notificationsAdminUrl = notificationsAdminUrlPostUrl;
 
- var buttonsAdminUrlPostUrl = AJS.contextPath() + "/rest/prnfb-admin/1.0/settings/buttons";
+ var buttonsAdminUrlPostUrl = NAV.rest().build() + "/../../prnfb-admin/1.0/settings/buttons";
  var buttonsAdminUrl = buttonsAdminUrlPostUrl;
 
  var projectKey;
@@ -17,13 +18,13 @@ define('plugin/prnfb/admin', [
   projectKey = $('#prnfbProjectKey').val();
   var repositorySlug = $('#prnfbRepositorySlug').val();
 
-  notificationsAdminUrl = notificationsAdminUrlPostUrl + '/projectKey/' + projectKey + '/repositorySlug/' + repositorySlug;
-  buttonsAdminUrl = buttonsAdminUrlPostUrl + '/projectKey/' + projectKey + '/repositorySlug/' + repositorySlug;
+  notificationsAdminUrl = notificationsAdminUrlPostUrl + '/projects/' + projectKey + '/repos/' + repositorySlug;
+  buttonsAdminUrl = buttonsAdminUrlPostUrl + '/projects/' + projectKey + '/repos/' + repositorySlug;
  } else if ($('#prnfbProjectKey').length !== 0) {
   projectKey = $('#prnfbProjectKey').val();
 
-  notificationsAdminUrl = notificationsAdminUrlPostUrl + '/projectKey/' + projectKey;
-  buttonsAdminUrl = buttonsAdminUrlPostUrl + '/projectKey/' + projectKey;
+  notificationsAdminUrl = notificationsAdminUrlPostUrl + '/projects/' + projectKey;
+  buttonsAdminUrl = buttonsAdminUrlPostUrl + '/projects/' + projectKey;
  }
 
  $(document)
@@ -41,6 +42,13 @@ define('plugin/prnfb/admin', [
  });
 });
 
-AJS.$(document).ready(function() {
- require('plugin/prnfb/admin');
-});
+
+if (AJS && AJS.$) {
+ AJS.$(document).ready(function() {
+  require('plugin/prnfb/admin');
+ });
+} else {
+ $(document).ready(function() {
+  require('plugin/prnfb/admin');
+ });
+}

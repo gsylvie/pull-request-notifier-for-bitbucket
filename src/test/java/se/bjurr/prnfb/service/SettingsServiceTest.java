@@ -14,6 +14,8 @@ import static se.bjurr.prnfb.settings.USER_LEVEL.EVERYONE;
 import static se.bjurr.prnfb.test.Podam.populatedInstanceOf;
 
 import com.atlassian.bitbucket.permission.Permission;
+import com.atlassian.bitbucket.project.Project;
+import com.atlassian.bitbucket.repository.Repository;
 import com.atlassian.bitbucket.user.EscalatedSecurityContext;
 import com.atlassian.bitbucket.user.SecurityService;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
@@ -36,6 +38,11 @@ public class SettingsServiceTest {
   private final PluginSettingsMap pluginSettings = new PluginSettingsMap();
   @Mock private PluginSettingsFactory pluginSettingsFactory;
   @Mock private SecurityService securityService;
+
+  @Mock private Project project;
+
+  @Mock private Repository repository;
+
   private SettingsService sut;
   private TransactionTemplate transactionTemplate;
 
@@ -118,8 +125,9 @@ public class SettingsServiceTest {
   public void testThatButtonsCanBeRetrievedByProject() {
     final PrnfbButton button1 = populatedInstanceOf(PrnfbButton.class);
     this.sut.addOrUpdateButton(button1);
+    when(project.getKey()).thenReturn(button1.getProjectKey().get());
 
-    final List<PrnfbButton> actual = this.sut.getButtons(button1.getProjectKey().get());
+    final List<PrnfbButton> actual = this.sut.getButtons(project);
 
     assertThat(actual) //
         .containsOnly(button1);
@@ -130,8 +138,12 @@ public class SettingsServiceTest {
     final PrnfbButton button1 = populatedInstanceOf(PrnfbButton.class);
     this.sut.addOrUpdateButton(button1);
 
-    final List<PrnfbButton> actual =
-        this.sut.getButtons(button1.getProjectKey().get(), button1.getRepositorySlug().get());
+    when(repository.getId()).thenReturn(1);
+    when(repository.getSlug()).thenReturn(button1.getRepositorySlug().get());
+    when(repository.getProject()).thenReturn(project);
+    when(project.getKey()).thenReturn(button1.getProjectKey().get());
+
+    final List<PrnfbButton> actual = this.sut.getButtons(repository);
 
     assertThat(actual) //
         .containsOnly(button1);

@@ -4,7 +4,7 @@
  <modelVersion>4.0.0</modelVersion>
  <groupId>se.bjurr.prnfb</groupId>
  <artifactId>pull-request-notifier-for-bitbucket</artifactId>
- <version>4.1</version>
+ <version>2023.05.10</version>
  <organization>
   <name>Tomas Bjerre</name>
   <url>http://bjurr.se/</url>
@@ -325,7 +325,7 @@ Changelog of Pull Request Notifier for Bitbucket.
   <changelog.version>1.54</changelog.version>
   <fmt.version>2.5.1</fmt.version>
   <violations.version>1.13</violations.version>
-  <bitbucket.version>6.1.2</bitbucket.version>
+  <bitbucket.version>7.0.5</bitbucket.version>
   <bitbucket.data.version>${bitbucket.version}</bitbucket.data.version>
   <quick.reload.version>2.0.0</quick.reload.version>
   <amps.version>8.0.0</amps.version>

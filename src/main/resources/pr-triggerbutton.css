@@ -1,0 +1,38 @@
+
+#prNotifierButton, #prNotifierButton ul, #prNotifierButton li, #prNotifierButton ul button
+{ list-style-type: none; margin: 0; padding: 0; border: 0; }
+
+#prNotifierButton { display: inline-block; position: relative; }
+
+#prNotifierButton ul li button {
+    padding: 12px 20px; white-space: nowrap; background-color: white; display: block; width: 100%;
+    text-align: left;
+    color: #172B4D;
+    font-size: 14px;
+}
+
+#prNotifierButton ul li button:hover {
+    background-color: #091e420a;
+    cursor: pointer;
+}
+
+/* #prNotifierMenu button.prnfb-button { color: blue; text-decoration: underline; } */
+
+#prNotifierMenu {
+    color: #172B4D;
+    font-size: 14px;
+    position:absolute; z-index: 1; top: 2.9em;
+    display: block; max-width: 380px;
+    background-color: white;
+    border-radius: 3px;
+    box-sizing: border-box;
+    box-shadow: var(--ds-overlay,0 4px 8px -2px rgba(9,30,66,0.25),0 0 1px rgba(9,30,66,0.31));
+
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+#prNotifierMenu[aria-expanded="false"]{ display: none; }
+
+#prNotifierMenu[aria-expanded="true"]{ display: block; }
+
