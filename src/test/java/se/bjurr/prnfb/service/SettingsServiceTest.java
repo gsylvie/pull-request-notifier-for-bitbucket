@@ -5,7 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static se.bjurr.prnfb.listener.PrnfbPullRequestAction.APPROVED;
 import static se.bjurr.prnfb.service.PrnfbRenderer.ENCODE_FOR.NONE;
-import static se.bjurr.prnfb.service.SettingsService.STORAGE_KEY;
+import static se.bjurr.prnfb.service.SettingsService.SETTINGS_STORAGE_KEY;
 import static se.bjurr.prnfb.settings.PrnfbNotificationBuilder.prnfbNotificationBuilder;
 import static se.bjurr.prnfb.settings.PrnfbSettingsBuilder.prnfbSettingsBuilder;
 import static se.bjurr.prnfb.settings.PrnfbSettingsDataBuilder.prnfbSettingsDataBuilder;
@@ -243,7 +243,8 @@ public class SettingsServiceTest {
             .build();
     final String oldSettingsString = new Gson().toJson(oldSettings);
 
-    this.pluginSettings.getPluginSettingsMap().put(STORAGE_KEY, oldSettingsString);
+    this.pluginSettings.getPluginSettingsMap().put(SETTINGS_STORAGE_KEY, oldSettingsString);
+    SettingsService.nextCacheExpiry = System.currentTimeMillis() - 12435L;
 
     final PrnfbSettings newSettings =
         prnfbSettingsBuilder() //
@@ -261,7 +262,7 @@ public class SettingsServiceTest {
     this.sut.setPrnfbSettingsData(newSettings.getPrnfbSettingsData());
 
     final String expectedSettingsString = new Gson().toJson(newSettings);
-    assertThat(this.pluginSettings.getPluginSettingsMap().get(STORAGE_KEY)) //
+    assertThat(this.pluginSettings.getPluginSettingsMap().get(SETTINGS_STORAGE_KEY)) //
         .isEqualTo(expectedSettingsString);
   }
 
@@ -280,7 +281,8 @@ public class SettingsServiceTest {
                 ) //
             .build();
     final String oldSettingsString = new Gson().toJson(oldSettings);
-    this.pluginSettings.getPluginSettingsMap().put(STORAGE_KEY, oldSettingsString);
+    this.pluginSettings.getPluginSettingsMap().put(SETTINGS_STORAGE_KEY, oldSettingsString);
+    SettingsService.nextCacheExpiry = System.currentTimeMillis() - 12435L;
 
     final PrnfbSettings actual = this.sut.getPrnfbSettings();
 
@@ -301,7 +303,8 @@ public class SettingsServiceTest {
 
   @Test
   public void testThatSettingsCanBeReadWhenNoneAreSaved() {
-    this.pluginSettings.getPluginSettingsMap().put(STORAGE_KEY, null);
+    this.pluginSettings.getPluginSettingsMap().put(SETTINGS_STORAGE_KEY, null);
+    SettingsService.nextCacheExpiry = System.currentTimeMillis() - 12435L;
 
     final PrnfbSettings actual = this.sut.getPrnfbSettings();
     assertThat(actual) //

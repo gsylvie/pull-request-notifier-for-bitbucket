@@ -39,12 +39,17 @@ import se.bjurr.prnfb.settings.ValidationException;
 
 public class SettingsService {
 
-  public static final String STORAGE_KEY = "se.bjurr.prnfb.pull-request-notifier-for-bitbucket-3";
+  public static final String SETTINGS_STORAGE_KEY =
+      "se.bjurr.prnfb.pull-request-notifier-for-bitbucket-3";
   private static Gson gson = new Gson();
   private final Logger logger = LoggerFactory.getLogger(SettingsService.class);
   private final PluginSettings pluginSettings;
   private final SecurityService securityService;
   private final TransactionTemplate transactionTemplate;
+
+  private static final Object lock = new Object();
+  static volatile String cachedSettings = null;
+  static volatile long nextCacheExpiry = 0;
 
   public SettingsService(
       PluginSettingsFactory pluginSettingsFactory,
@@ -185,13 +190,7 @@ public class SettingsService {
 
   @VisibleForTesting
   public PrnfbSettings getPrnfbSettings() {
-    return inSynchronizedTransaction(
-        new TransactionCallback<PrnfbSettings>() {
-          @Override
-          public PrnfbSettings doInTransaction() {
-            return doGetPrnfbSettings();
-          }
-        });
+    return doGetPrnfbSettings(false);
   }
 
   public PrnfbSettingsData getPrnfbSettingsData() {
@@ -203,7 +202,7 @@ public class SettingsService {
         new TransactionCallback<Void>() {
           @Override
           public Void doInTransaction() {
-            final PrnfbSettings oldSettings = doGetPrnfbSettings();
+            final PrnfbSettings oldSettings = doGetPrnfbSettings(true);
             final PrnfbSettings newPrnfbSettings =
                 prnfbSettingsBuilder(oldSettings) //
                     .setPrnfbSettingsData(prnfbSettingsData) //
@@ -219,7 +218,7 @@ public class SettingsService {
       doDeleteButton(prnfbButton.getUuid());
     }
 
-    final PrnfbSettings originalSettings = doGetPrnfbSettings();
+    final PrnfbSettings originalSettings = doGetPrnfbSettings(true);
     final PrnfbSettings updated =
         prnfbSettingsBuilder(originalSettings) //
             .withButton(prnfbButton) //
@@ -262,7 +261,7 @@ public class SettingsService {
       doDeleteNotification(notificationUuid);
     }
 
-    final PrnfbSettings originalSettings = doGetPrnfbSettings();
+    final PrnfbSettings originalSettings = doGetPrnfbSettings(true);
     final PrnfbSettings updated =
         prnfbSettingsBuilder(originalSettings) //
             .withNotification(newNotification) //
@@ -281,7 +280,7 @@ public class SettingsService {
   }
 
   private void doDeleteButton(UUID uuid) {
-    final PrnfbSettings originalSettings = doGetPrnfbSettings();
+    final PrnfbSettings originalSettings = doGetPrnfbSettings(true);
     final List<PrnfbButton> keep =
         newArrayList(filter(originalSettings.getButtons(), not(withUuid(uuid))));
     final PrnfbSettings withoutDeleted =
@@ -292,7 +291,7 @@ public class SettingsService {
   }
 
   private void doDeleteNotification(UUID uuid) {
-    final PrnfbSettings originalSettings = doGetPrnfbSettings();
+    final PrnfbSettings originalSettings = doGetPrnfbSettings(true);
     final List<PrnfbNotification> keep =
         newArrayList(filter(originalSettings.getNotifications(), not(withUuid(uuid))));
     final PrnfbSettings withoutDeleted =
@@ -302,9 +301,25 @@ public class SettingsService {
     doSetPrnfbSettings(withoutDeleted);
   }
 
-  private PrnfbSettings doGetPrnfbSettings() {
-    final Object storedSettings = this.pluginSettings.get(STORAGE_KEY);
-    if (storedSettings == null) {
+  private PrnfbSettings doGetPrnfbSettings(boolean forceRead) {
+    long now = System.currentTimeMillis();
+    if (now >= nextCacheExpiry || forceRead) {
+      synchronized (lock) {
+        if (now >= nextCacheExpiry || forceRead) {
+
+          // Cache expired... re-read value from database and re-cache it
+          cachedSettings = (String) this.pluginSettings.get(SETTINGS_STORAGE_KEY);
+
+          if (cachedSettings != null) {
+            // Read a real value... use cache for next 33 seconds!
+            nextCacheExpiry = System.currentTimeMillis() + 33333L;
+          }
+        }
+      }
+    }
+
+    if (cachedSettings == null) {
+      // Empty initialization case (rare):  don't bother setting any cache.
       this.logger.info("Creating new default settings.");
       return prnfbSettingsBuilder() //
           .setPrnfbSettingsData( //
@@ -312,12 +327,14 @@ public class SettingsService {
                   .setAdminRestriction(USER_LEVEL.ADMIN) //
                   .build()) //
           .build();
+    } else {
+      // always return PrnfbSettings object based on cached value.
+      return gson.fromJson(cachedSettings, PrnfbSettings.class);
     }
-    return gson.fromJson(storedSettings.toString(), PrnfbSettings.class);
   }
 
   private void doSetPrnfbSettings(PrnfbSettings newSettings) {
-    final PrnfbSettingsData oldSettingsData = doGetPrnfbSettings().getPrnfbSettingsData();
+    final PrnfbSettingsData oldSettingsData = doGetPrnfbSettings(false).getPrnfbSettingsData();
     final PrnfbSettingsData newSettingsData = newSettings.getPrnfbSettingsData();
     final String keyStorePassword =
         keepIfUnchanged(
@@ -334,7 +351,8 @@ public class SettingsService {
             .build();
 
     final String data = gson.toJson(adjustedSettings);
-    this.pluginSettings.put(STORAGE_KEY, data);
+    this.pluginSettings.put(SETTINGS_STORAGE_KEY, data);
+    cachedSettings = data;
   }
 
   private synchronized <T> T inSynchronizedTransaction(TransactionCallback<T> transactionCallback) {
