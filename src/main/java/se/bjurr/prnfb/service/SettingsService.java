@@ -48,7 +48,7 @@ public class SettingsService {
   private final TransactionTemplate transactionTemplate;
 
   private static final Object lock = new Object();
-  static volatile String cachedSettings = null;
+  static volatile PrnfbSettings cachedSettings = null;
   static volatile long nextCacheExpiry = 0;
 
   public SettingsService(
@@ -308,11 +308,14 @@ public class SettingsService {
         if (now >= nextCacheExpiry || forceRead) {
 
           // Cache expired... re-read value from database and re-cache it
-          cachedSettings = (String) this.pluginSettings.get(SETTINGS_STORAGE_KEY);
+          String s = (String) this.pluginSettings.get(SETTINGS_STORAGE_KEY);
 
-          if (cachedSettings != null) {
-            // Read a real value... use cache for next 33 seconds!
+          if (s != null) {
+            // Successfully retrieved a real value... use it as our cache for next 33 seconds!
             nextCacheExpiry = System.currentTimeMillis() + 33333L;
+            cachedSettings = gson.fromJson(s, PrnfbSettings.class);
+          } else {
+            cachedSettings = null;
           }
         }
       }
@@ -328,8 +331,7 @@ public class SettingsService {
                   .build()) //
           .build();
     } else {
-      // always return PrnfbSettings object based on cached value.
-      return gson.fromJson(cachedSettings, PrnfbSettings.class);
+      return cachedSettings;
     }
   }
 
@@ -351,8 +353,9 @@ public class SettingsService {
             .build();
 
     final String data = gson.toJson(adjustedSettings);
+    final PrnfbSettings adjustedSettingsReparsed = gson.fromJson(data, PrnfbSettings.class);
     this.pluginSettings.put(SETTINGS_STORAGE_KEY, data);
-    cachedSettings = data;
+    cachedSettings = adjustedSettingsReparsed;
   }
 
   private synchronized <T> T inSynchronizedTransaction(TransactionCallback<T> transactionCallback) {
