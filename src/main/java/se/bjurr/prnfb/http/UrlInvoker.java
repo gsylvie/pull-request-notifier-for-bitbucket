@@ -17,37 +17,16 @@ import static se.bjurr.prnfb.http.UrlInvoker.HTTP_METHOD.PUT;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.cert.X509Certificate;
 import java.util.List;
-import javax.net.ssl.SSLContext;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpVersion;
 import org.apache.http.ProtocolVersion;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.HttpClientConnectionManager;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.ProxyAuthenticationStrategy;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.http.ssl.SSLContexts;
-import org.apache.http.ssl.TrustStrategy;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import se.bjurr.prnfb.settings.PrnfbHeader;
 import se.bjurr.prnfb.settings.PrnfbNotification;
@@ -175,17 +154,12 @@ public class UrlInvoker {
     addHeaders(httpRequestBase);
     httpRequestBase.setProtocolVersion(httpVersion);
 
-    final HttpClientBuilder builder = HttpClientBuilder.create();
-    configureSsl(builder);
-    configureProxy(builder);
-
-    this.response = doInvoke(httpRequestBase, builder);
+    this.response = HttpUtil.doInvoke(this, httpRequestBase);
     if (LOG.isDebugEnabled()) {
       if (this.response != null) {
         LOG.debug(this.response.getContent());
       }
     }
-
     return this.response;
   }
 
@@ -213,9 +187,16 @@ public class UrlInvoker {
     return (this.method == POST || this.method == PUT) && this.postContent.isPresent();
   }
 
-  @VisibleForTesting
-  public boolean shouldUseProxy() {
+  private boolean shouldUseProxy() {
     return getProxyHost().isPresent() && getProxyPort().isPresent() && getProxyPort().get() > 0;
+  }
+
+  public HttpHost getHttpHostForProxy() {
+    if (shouldUseProxy()) {
+      return new HttpHost(this.proxyHost.get(), this.proxyPort.get(), this.proxySchema.orNull());
+    } else {
+      return null;
+    }
   }
 
   public UrlInvoker withClientKeyStore(final ClientKeyStore clientKeyStore) {
@@ -268,7 +249,7 @@ public class UrlInvoker {
     return this;
   }
 
-  private void addHeaders(final HttpRequestBase httpRequestBase) {
+  void addHeaders(final HttpRequestBase httpRequestBase) {
     for (final PrnfbHeader header : this.headers) {
 
       if (header.getName().equals(AUTHORIZATION)) {
@@ -281,7 +262,7 @@ public class UrlInvoker {
     }
   }
 
-  private void configureUrl(final HttpRequestBase httpRequestBase) {
+  void configureUrl(final HttpRequestBase httpRequestBase) {
     try {
       httpRequestBase.setURI(new URI(this.urlParam));
     } catch (final URISyntaxException e) {
@@ -289,112 +270,8 @@ public class UrlInvoker {
     }
   }
 
-  private SSLContextBuilder doAcceptAnyCertificate(SSLContextBuilder customContext)
-      throws Exception {
-    final TrustStrategy easyStrategy =
-        new TrustStrategy() {
-          @Override
-          public boolean isTrusted(final X509Certificate[] chain, final String authType) {
-            return true;
-          }
-        };
-    customContext = customContext.loadTrustMaterial(null, easyStrategy);
-
-    return customContext;
-  }
-
-  private SSLContext newSslContext() throws Exception {
-    final SSLContextBuilder sslContextBuilder = SSLContexts.custom();
-    if (this.shouldAcceptAnyCertificate) {
-      doAcceptAnyCertificate(sslContextBuilder);
-      if (this.clientKeyStore.getKeyStore().isPresent()) {
-        sslContextBuilder.loadKeyMaterial(
-            this.clientKeyStore.getKeyStore().get(), this.clientKeyStore.getPassword());
-      }
-    }
-
-    return sslContextBuilder.build();
-  }
-
-  private boolean shouldUseSsl() {
+  boolean shouldUseSsl() {
     return this.urlParam.startsWith("https");
-  }
-
-  @VisibleForTesting
-  HttpClientBuilder configureProxy(final HttpClientBuilder builder) {
-    if (!shouldUseProxy()) {
-      return builder;
-    }
-
-    if (this.proxyUser.isPresent() && this.proxyPassword.isPresent()) {
-      final String username = this.proxyUser.get();
-      final String password = this.proxyPassword.get();
-      final UsernamePasswordCredentials creds = new UsernamePasswordCredentials(username, password);
-      final CredentialsProvider credsProvider = new BasicCredentialsProvider();
-      credsProvider.setCredentials(
-          new AuthScope(this.proxyHost.get(), this.proxyPort.get()), creds);
-      builder.setDefaultCredentialsProvider(credsProvider);
-    }
-
-    builder.useSystemProperties();
-    builder.setProxy(
-        new HttpHost(this.proxyHost.get(), this.proxyPort.get(), this.proxySchema.orNull()));
-    builder.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
-    return builder;
-  }
-
-  @VisibleForTesting
-  HttpClientBuilder configureSsl(final HttpClientBuilder builder) {
-    if (shouldUseSsl()) {
-      try {
-        final SSLContext s = newSslContext();
-        final SSLConnectionSocketFactory sslConnSocketFactory = new SSLConnectionSocketFactory(s);
-        builder.setSSLSocketFactory(sslConnSocketFactory);
-
-        final Registry<ConnectionSocketFactory> registry =
-            RegistryBuilder.<ConnectionSocketFactory>create()
-                .register("https", sslConnSocketFactory)
-                .build();
-
-        final HttpClientConnectionManager ccm = new BasicHttpClientConnectionManager(registry);
-
-        builder.setConnectionManager(ccm);
-      } catch (final Exception e) {
-        propagate(e);
-      }
-    }
-    return builder;
-  }
-
-  @VisibleForTesting
-  HttpResponse doInvoke(final HttpRequestBase httpRequestBase, final HttpClientBuilder builder) {
-    CloseableHttpResponse httpResponse = null;
-    try {
-      httpResponse =
-          builder //
-              .build() //
-              .execute(httpRequestBase);
-
-      final HttpEntity entity = httpResponse.getEntity();
-      String entityString = "";
-      if (entity != null) {
-        entityString = EntityUtils.toString(entity, UTF_8);
-      }
-      final URI uri = httpRequestBase.getURI();
-      final int statusCode = httpResponse.getStatusLine().getStatusCode();
-      return new HttpResponse(uri, statusCode, entityString);
-    } catch (final Exception e) {
-      LOG.error("", e);
-    } finally {
-      try {
-        if (httpResponse != null) {
-          httpResponse.close();
-        }
-      } catch (final IOException e) {
-        propagate(e);
-      }
-    }
-    return null;
   }
 
   @VisibleForTesting

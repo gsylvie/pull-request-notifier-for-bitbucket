@@ -4,7 +4,7 @@
  <modelVersion>4.0.0</modelVersion>
  <groupId>se.bjurr.prnfb</groupId>
  <artifactId>pull-request-notifier-for-bitbucket</artifactId>
- <version>2023.10.21</version>
+ <version>2023.10.31</version>
  <organization>
   <name>Tomas Bjerre</name>
   <url>http://bjurr.se/</url>
@@ -130,58 +130,30 @@
    <version>6.0.2.RELEASE</version>
    <scope>test</scope>
   </dependency>
+
+     <dependency>
+         <groupId>com.atlassian.plugin</groupId>
+	 <artifactId>atlassian-spring-scanner-annotation</artifactId>
+	 <scope>provided</scope>
+ </dependency>
+
+     <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>1</version>
+            <scope>provided</scope>
+        </dependency>
+
+	     <dependency>
+            <groupId>com.atlassian.bitbucket.server</groupId>
+            <artifactId>bitbucket-git</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+
  </dependencies>
  <build>
   <plugins>
-   <plugin>
-    <groupId>se.bjurr.gitchangelog</groupId>
-    <artifactId>git-changelog-maven-plugin</artifactId>
-    <version>${changelog.version}</version>
-    <executions>
-     <execution>
-      <id>GenerateGitChangelog</id>
-      <phase>generate-sources</phase>
-      <goals>
-       <goal>git-changelog</goal>
-      </goals>
-      <configuration>
-       <readableTagName>-([^-]+?)$</readableTagName>
-       <gitHubApi>https://api.github.com/repos/tomasbjerre/pull-request-notifier-for-bitbucket</gitHubApi>
-       <gitHubToken>${GITHUB_OAUTH2TOKEN}</gitHubToken>
-       <gitHubIssuePattern>#([0-9]*)</gitHubIssuePattern>
-       <file>CHANGELOG.md</file>
-       <ignoreTagsIfNameMatches>.*RC.*</ignoreTagsIfNameMatches>
-       <removeIssueFromMessage>true</removeIssueFromMessage>
-       <jiraIssuePattern>no pattern</jiraIssuePattern>
-       <templateContent>
-        <![CDATA[
-# Pull Request Notifier for Bitbucket Changelog
-
-Changelog of Pull Request Notifier for Bitbucket.
-
-{{#tags}}
-## {{name}}
- {{#issues}}
-  {{#hasLink}}
-### {{name}} [{{issue}}]({{link}}) {{title}}
-  {{/hasLink}}
-  {{^hasLink}}
-### {{name}}
-  {{/hasLink}}
-  {{#commits}}
-  {{{message}}}
-  
-  [{{hash}}](https://github.com/tomasbjerre/pull-request-notifier-for-bitbucket/commit/{{hash}}) {{authorName}} *{{commitTime}}*
-
-  {{/commits}}
- {{/issues}}
-{{/tags}}
-]]>
-       </templateContent>
-      </configuration>
-     </execution>
-    </executions>
-   </plugin>
    <plugin>
     <groupId>com.atlassian.maven.plugins</groupId>
     <artifactId>bitbucket-maven-plugin</artifactId>

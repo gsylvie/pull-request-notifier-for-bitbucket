@@ -4,15 +4,20 @@
  <title>Pull Request Notifier for Bitbucket Admin</title>
 
  #if($repository)
- <meta name="projectKey" content="$repository.project.key">
- <meta name="repositorySlug" content="$repository.slug">
- <meta name="decorator" content="bitbucket.repository.settings">
- <meta name="activeTab" content="se.bjurr.ssfb.repo.synchronization">
- <!-- //-->
+  <meta name="projectKey" content="$repository.project.key">
+  <meta name="repositorySlug" content="$repository.slug">
+  <meta name="decorator" content="bitbucket.repository.settings">
+  <meta name="activeTab" content="se.bjurr.prnfb.repolevel">
+  <!-- //-->
+ #elseif($project)
+  <meta name="decorator" content="bitbucket.project.settings">
+  <meta name="projectKey" content="$project.key">
+  <meta name="activeTab" content="se.bjurr.prnfb.projectlevel">
  #else
- <!-- //-->
- <meta name="decorator" content="atl.admin">
- <!-- //-->
+  <!-- //-->
+  <meta name="decorator" content="atl.admin">
+  <meta name="activeTab" content="se.bjurr.prnfb.adminlevel">
+  <!-- //-->
  #end
  <!-- //-->
  $webResourceManager.requireResource("se.bjurr.prnfs.pull-request-notifier-for-stash:resources")
@@ -26,22 +31,16 @@
 
 <body>
 
- <!-- //-->
+
  #if($repository)
- <!-- //-->
  <input type="hidden" id="prnfbProjectKey" name="projectKey" value="$repository.project.key" />
  <input type="hidden" id="prnfbRepositorySlug" name="repositorySlug" value="$repository.slug" />
- <!-- //-->
- #end
- <!-- //-->
-
- <!-- //-->
- #if($project)
- <!-- //-->
+ #elseif($project)
  <input type="hidden" id="prnfbProjectKey" name="projectKey" value="$project.key" />
- <!-- //-->
+ #else
+ <h3>HTTP Tracing</h3>
+ <p>Visit the <a href='./admin?trace=y'>HTTP Tracing Page</a> to check on HTTP response health.</p>
  #end
- <!-- //-->
 
  <div class="statusresponse"></div>
 
@@ -479,7 +478,7 @@
      <input class="checkbox" type="checkbox" name="updatePullRequestRefs" value="true">&nbsp;
     </div>
     <div class="description">
-     Will update refs/pull-requests/{id}/from and refs/pull-requests/{id}/merge references in Git when Pull Request is rescoped.
+     Deprecated - this checkbox does nothing.
     </div>
    </fieldset>
 

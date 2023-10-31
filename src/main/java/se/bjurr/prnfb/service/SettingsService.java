@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.bjurr.prnfb.http.HttpUtil;
 import se.bjurr.prnfb.settings.HasUuid;
 import se.bjurr.prnfb.settings.PrnfbButton;
 import se.bjurr.prnfb.settings.PrnfbNotification;
@@ -49,6 +50,9 @@ public class SettingsService {
 
   private static final Object lock = new Object();
   static volatile PrnfbSettings cachedSettings = null;
+
+  static volatile PrnfbSettingsData lastSeenGlobalSettings = null;
+
   static volatile long nextCacheExpiry = 0;
 
   public SettingsService(
@@ -314,6 +318,15 @@ public class SettingsService {
             // Successfully retrieved a real value... use it as our cache for next 33 seconds!
             nextCacheExpiry = System.currentTimeMillis() + 33333L;
             cachedSettings = gson.fromJson(s, PrnfbSettings.class);
+
+            // If the keystore or "accept-all-certificates" value changed, we need
+            // to reset HttpUtil's connection-managers.
+            PrnfbSettingsData latestData = cachedSettings.getPrnfbSettingsData();
+            if (latestData != null && !latestData.equals(lastSeenGlobalSettings)) {
+              HttpUtil.reset();
+              lastSeenGlobalSettings = latestData;
+            }
+
           } else {
             cachedSettings = null;
           }

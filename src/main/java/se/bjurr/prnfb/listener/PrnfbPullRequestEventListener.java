@@ -113,24 +113,7 @@ public class PrnfbPullRequestEventListener {
     }
 
     for (final PrnfbNotification notification : settingsService.getNotifications()) {
-      boolean mergePerformed = false;
       try {
-        if (!pullRequest.isClosed()
-            && pullRequestEvent.getAction().equals(PullRequestAction.RESCOPED)
-            && notification.isUpdatePullRequestRefs()
-            && !mergePerformed) {
-          mergePerformed = true;
-          try {
-            final ScmPullRequestCommandFactory scmPullRequestCommandFactory =
-                scmService.getPullRequestCommandFactory(pullRequest);
-            Command<?> command;
-            command = scmPullRequestCommandFactory.tryMerge(pullRequest);
-            command.call();
-          } catch (final ServiceException se) {
-            LOG.warn("Merge check failed " + pullRequest, se);
-          }
-        }
-
         handleEventNotification(pullRequestEvent, settings, clientKeyStore, notification);
       } catch (final Exception e) {
         LOG.error(

@@ -14,6 +14,7 @@
  <component key="userCheckService" class="se.bjurr.prnfb.service.UserCheckService" />
  <component key="settingsService" class="se.bjurr.prnfb.service.SettingsService" />
  <component key="prnfbRendererFactory" class="se.bjurr.prnfb.service.PrnfbRendererFactory" />
+ <component key="prNotifierHttpUtil" class="se.bjurr.prnfb.http.HttpUtil" />
 
  <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties" />
  <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager" />
@@ -45,15 +46,23 @@
 
 
  <web-item key="se.bjurr.prnfb.repolevel" name="repolevel" section="bitbucket.repository.settings.panel/repository-settings-addons-section">
-  <label key="se.bjurr.prnfb.repolevel">Pull request notifications</label>
+  <label key="se.bjurr.prnfb.repolevel">PR-Notifier</label>
   <link>/plugins/servlet/prnfb/admin/${repository.project.key}/${repository.slug}
   </link>
  </web-item>
 
  <web-item key="se.bjurr.prnfb.projectlevel" name="projectlevel" section="bitbucket.project.settings.panel/project-settings-addons-section">
-  <label key="se.bjurr.prnfb.projectlevel">Pull request notifications</label>
+  <label key="se.bjurr.prnfb.projectlevel">PR-Notifier</label>
   <link>/plugins/servlet/prnfb/admin/${project.key}
   </link>
+ </web-item>
+
+ <web-item key="se.bjurr.prnfb.adminlevel" name="adminlevel" section="atl.admin/admin-plugins-section"
+           weight="12">
+  <label key="se.bjurr.prnfb.projectlevel">PR-Notifier</label>
+  <link linkId="pr-notifier-settings-id">/plugins/servlet/prnfb/admin</link>
+  <tooltip key="pr-notifier-settings.tooltip">Configure PR-Notifier global settings</tooltip>
+  <description key="pr-notifier-settings.description">Configure PR-Notifier global settings.</description>
  </web-item>
 
  <client-web-item key="se.bjurr.prnfb.triggerbutton" name="Trigger Notification" weight="50" section="bitbucket.pullrequest.action">

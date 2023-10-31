@@ -1,0 +1,96 @@
+<html>
+
+<head>
+    <title>Pull Request Notifier for Bitbucket Admin</title>
+    <meta name="decorator" content="atl.admin">
+    <meta name="activeTab" content="se.bjurr.prnfb.adminlevel">
+
+    $webResourceManager.requireResource("se.bjurr.prnfs.pull-request-notifier-for-stash:resources")
+    $webResourceManager.requireResource("com.atlassian.auiplugin:aui-select")
+    $webResourceManager.requireResource("com.atlassian.auiplugin:aui-toggle")
+    $webResourceManager.requireResource("com.atlassian.auiplugin:aui-experimental-expander")
+
+    <style type="text/css">
+        th, td {padding-right: 8px; white-space: nowrap; }
+        th {font-weight: bold; text-align: left; vertical-align: bottom; }
+    </style>
+</head>
+
+<body>
+
+<h1>PR-Notifier - HTTP Tracing Page</h1>
+<p>
+The entries below show a quick snapshot of how the HTTP notifications are
+doing. The last-25 for each category are shown.
+</p>
+<p>
+Note: the "in-flight" notification are still waiting for their complete HTTP
+response to come back from their end-point.  Typically there should be
+very few entries for the "in-flight" group.
+</p>
+<p>
+<br/>Click here to: <form action='./admin' style='display: inline;'>
+<input type='hidden' name='trace' value='y'/>
+<input type='hidden' name='refresh' value='y'/>
+<input type='submit' value='Reload Apache-HTTP-Client Connection Managers' style='display: inline;'/>
+    <br/> <b style='color: green;'>$refreshResult</b>
+</form>
+</p>
+
+<table cellpadding="0" cellspacing="0" border="0" style="margin-top: 3em;">
+    <tbody>
+    <tr><th colspan="9"><h2>In Flight</h2></th></tr>
+    <tr><th>Timestamp</th><th>Elapsed</th><th>Status</th><th>Method</th><th>Uploaded</th><th>URL</th><th>Downloaded</th><th>Proxy</th><th>Error</th></tr>
+    #foreach( $row in $in_flight )
+        <tr>
+            #foreach( $item in $row )
+                <td>$item</td>
+            #end
+        </tr>
+    #end
+
+    <tr><td>&nbsp;</td></tr>
+    </tbody>
+    <tbody>
+    <tr><th colspan="9"><h2>Errors (Connection Failed)</h2></th></tr>
+    <tr><th>Timestamp</th><th>Elapsed</th><th>Status</th><th>Method</th><th>Uploaded</th><th>URL</th><th>Downloaded</th><th>Proxy</th><th>Error</th></tr>
+    #foreach( $row in $errors )
+        <tr>
+            #foreach( $item in $row )
+                <td>$item</td>
+            #end
+        </tr>
+    #end
+    <tr><td>&nbsp;</td></tr>
+    </tbody>
+    <tbody>
+    <tr><th colspan="9"><h2>Failures (Non-200 HTTP status codes)</h2></th></tr>
+    <tr><th>Timestamp</th><th>Elapsed</th><th>Status</th><th>Method</th><th>Uploaded</th><th>URL</th><th>Downloaded</th><th>Proxy</th><th>Error</th></tr>
+    #foreach( $row in $failures )
+        <tr>
+            #foreach( $item in $row )
+                <td>$item</td>
+            #end
+        </tr>
+    #end
+    <tr><td>&nbsp;</td></tr>
+    </tbody>
+    <tbody>
+    <tr><th colspan="9"><h2>Successes</h2></th></tr>
+    <tr><th>Timestamp</th><th>Elapsed</th><th>Status</th><th>Method</th><th>Uploaded</th><th>URL</th><th>Downloaded</th><th>Proxy</th><th>Error</th></tr>
+    #foreach( $row in $successes )
+        <tr>
+            #foreach( $item in $row )
+                <td>$item</td>
+            #end
+        </tr>
+    #end
+    <tr><td>&nbsp;</td></tr>
+    </tbody>
+
+</table>
+
+
+</body>
+
+</html>

@@ -505,13 +505,4 @@ public class PrnfbPullRequestEventListenerTest {
     assertInvokedUrls("http://not1.com/", "http://not2.com/");
   }
 
-  @Test
-  public void testThatTryMergeIsCalledWhenUpdatePullRequestRefsEnabled()
-      throws ValidationException {
-    when(scmService.getPullRequestCommandFactory(any(PullRequest.class)))
-        .thenReturn(pullRequestCommandFactory);
-    when(pullRequestCommandFactory.tryMerge(any(PullRequest.class))).thenReturn(pullRequestCommand);
-    sut.handleEventAsync(pullRequestRescopedEvent);
-    verify(pullRequestCommand, times(1)).call();
-  }
 }

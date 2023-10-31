@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import se.bjurr.prnfb.http.HttpUtil;
 import se.bjurr.prnfb.service.UserCheckService;
 
 public class GlobalAdminServlet extends HttpServlet {
@@ -76,6 +77,29 @@ public class GlobalAdminServlet extends HttpServlet {
       boolean isSystemAdmin = this.userCheckService.isSystemAdmin(user.getUserKey());
 
       Map<String, Object> context = newHashMap();
+
+      String trace = request.getParameter("trace");
+      if ("y".equalsIgnoreCase(trace)) {
+        String refresh = request.getParameter("refresh");
+        String refreshSuccess = request.getParameter("refreshSuccess");
+        if ("y".equalsIgnoreCase(refresh)) {
+          HttpUtil.reset();
+          response.sendRedirect("./admin?trace=y&refreshSuccess=y");
+          return;
+        } else if ("y".equalsIgnoreCase(refreshSuccess)) {
+          context.put("refreshResult", "Success");
+        } else {
+          context.put("refreshResult", "");
+        }
+        context.put("successes", HttpUtil.LAST_25_SUCCESSES.values());
+        context.put("failures", HttpUtil.LAST_25_FAILURES.values());
+        context.put("errors", HttpUtil.LAST_25_ERRORS.values());
+        context.put("in_flight", HttpUtil.LAST_25_IN_FLIGHT.values());
+        response.setContentType("text/html;charset=UTF-8");
+        this.renderer.render("debug.vm", context, response.getWriter());
+        return;
+      }
+
       if (repository.isPresent()) {
         context =
             of( //
