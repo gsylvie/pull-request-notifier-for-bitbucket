@@ -3,10 +3,13 @@
   <description>${project.description}</description>
   <version>${project.version}</version>
   <vendor name="${project.organization.name}" url="${project.organization.url}" />
-  <param name="atlassian-data-center-compatible">true</param>
   <param name="plugin-icon">images/pluginIcon.png</param>
   <param name="plugin-logo">images/pluginLogo.png</param>
   <param name="configure.url">/plugins/servlet/prnfb/admin</param>
+
+        <param name="plugin-type">both</param>
+        <param name="atlassian-data-center-status">compatible</param>
+        <param name="atlassian-data-center-compatible">true</param>
  </plugin-info>
 
  <component key="prnfbPullRequestEventListener" class="se.bjurr.prnfb.listener.PrnfbPullRequestEventListener" />

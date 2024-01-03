@@ -4,19 +4,15 @@
  <modelVersion>4.0.0</modelVersion>
  <groupId>se.bjurr.prnfb</groupId>
  <artifactId>pull-request-notifier-for-bitbucket</artifactId>
- <version>2023.10.31</version>
- <organization>
-  <name>Tomas Bjerre</name>
-  <url>http://bjurr.se/</url>
- </organization>
+ <version>2024.01.02</version>
+   <organization>
+        <name>bit-booster.com</name>
+        <url>https://bit-booster.com/</url>
+    </organization>
  <name>pull-request-notifier-for-bitbucket</name>
- <description>This is the Pull Request Notifier for Atlassian Bitbucket. See https://github.com/tomasbjerre/pull-request-notifier-for-bitbucket for documentation and source code.</description>
+ <description>This is the Pull Request Notifier for Atlassian Bitbucket. See https://github.com/gsylvie/pull-request-notifier-for-bitbucket for documentation and source code.
+	 Note: forked from the original github.com/tomasbjerre/ version to add Bitbucket 8.x compatibility as well as Atlassian Data Center certification.</description>
  <packaging>atlassian-plugin</packaging>
- <scm>
-  <developerConnection>scm:git:git@github.com:tomasbjerre/pull-request-notifier-for-bitbucket.git</developerConnection>
-  <url>https://github.com/tomasbjerre/pull-request-notifier-for-bitbucket</url>
-  <tag>pull-request-notifier-for-bitbucket-4.1</tag>
- </scm>
  <distributionManagement>
   <repository>
    <id>local-repo</id>
@@ -98,7 +94,7 @@
   <dependency>
    <groupId>org.mockito</groupId>
    <artifactId>mockito-all</artifactId>
-   <version>1.8.5</version>
+   <version>1.10.19</version>
    <scope>test</scope>
   </dependency>
   <dependency>
@@ -107,27 +103,27 @@
    <scope>test</scope>
   </dependency>
   <dependency>
-   <groupId>com.sun.jersey</groupId>
-   <artifactId>jersey-client</artifactId>
-   <version>1.19</version>
+<groupId>com.sun.jersey</groupId>	  
+ <artifactId>jersey-client</artifactId>
+   <version>1.19.4</version>
    <scope>test</scope>
   </dependency>
   <dependency>
    <groupId>org.assertj</groupId>
    <artifactId>assertj-core</artifactId>
-   <version>3.3.0</version>
+   <version>3.25.0</version>
    <scope>test</scope>
   </dependency>
   <dependency>
    <groupId>commons-logging</groupId>
    <artifactId>commons-logging</artifactId>
-   <version>1.2</version>
+   <version>1.3.0</version>
    <scope>test</scope>
   </dependency>
   <dependency>
    <groupId>uk.co.jemos.podam</groupId>
    <artifactId>podam</artifactId>
-   <version>6.0.2.RELEASE</version>
+   <version>8.0.0.RELEASE</version>
    <scope>test</scope>
   </dependency>
 
