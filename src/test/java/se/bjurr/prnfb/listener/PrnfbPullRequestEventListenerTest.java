@@ -504,5 +504,4 @@ public class PrnfbPullRequestEventListenerTest {
 
     assertInvokedUrls("http://not1.com/", "http://not2.com/");
   }
-
 }
