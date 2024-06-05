@@ -261,7 +261,7 @@ define('plugin/prnfb/utils', [
 
  $(document).ready(function() {
   listFieldChanged($(this));
-  $('.listfield').find('input, textarea').live('keyup', function() {
+  $(document).on('keyup', '.listfield input, .listfield textarea', function() {
    listFieldChanged($(this));
   });
  });
